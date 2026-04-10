@@ -698,16 +698,16 @@
       <p class="subtitle">LINE Yahoo (LY Corporation) — 실시간 동향 대시보드</p>
     </div>
   </div>
-  <div style="margin-top:16px;font-size:12px;color:var(--text-dim);display:flex;flex-direction:column;align-items:center;gap:4px;">
+  <button class="fetch-btn" id="fetchBtn" onclick="fetchLatestNews()">
+    <span class="fetch-icon">↻</span> 최신 기사 가져오기
+  </button>
+  <div style="margin-top:12px;font-size:12px;color:var(--text-dim);display:flex;flex-direction:column;align-items:center;gap:4px;">
     <div style="display:flex;align-items:center;gap:6px;">
       <div class="live-dot"></div>
       <span id="liveDate">LIVE · 2026년 4월 9일 기준</span>
     </div>
     <div id="fetchStatus" class="fetch-status"></div>
   </div>
-  <button class="fetch-btn" id="fetchBtn" onclick="fetchLatestNews()">
-    <span class="fetch-icon">↻</span> 최신 기사 가져오기
-  </button>
 </header>
 
 <!-- Today's News Rolling -->
