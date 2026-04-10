@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라인야후(LY) 최신 이슈 트래커</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #000000;
+    --card-bg: transparent;
+    --card-border: #444;
+    --text: #e0e0e0;
+    --text-dim: #999;
+    --wire: #666;
+    --wire-light: #555;
+    --white: #f0f0f0;
+    --accent: #0af;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background — wireframe grid */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .bg-glow { display: none; }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 40px 24px 20px;
+    text-align: center;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 52px; height: 52px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--white);
+  }
+
+  h1 {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--white);
+  }
+  h1 span { color: var(--white); }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin-top: 8px;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 6px 16px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
+  }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 8px 24px;
+    margin: 12px auto 0;
+    max-width: 960px;
+    position: relative;
+    z-index: 10;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab:hover { color: var(--text); border-color: var(--wire); }
+  .tab.active {
+    color: var(--accent);
+    background: transparent;
+    border-color: var(--accent);
+  }
+  .tab.tab-highlight {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    position: relative;
+    background: rgba(0,170,255,0.06);
+  }
+  .tab.tab-highlight::after {
+    content: 'NEW';
+    position: absolute;
+    top: -6px;
+    right: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 5px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .tab.tab-highlight.active {
+    background: rgba(0,170,255,0.1);
+    border-color: var(--accent);
+  }
+
+  /* Main */
+  main {
+    position: relative;
+    z-index: 10;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+  }
+
+  /* Timeline section */
+  .timeline { display: flex; flex-direction: column; gap: 14px; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    padding: 28px 28px 24px;
+    transition: all .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--wire);
+  }
+  .card:hover {
+    border-color: var(--wire-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(255,255,255,0.03);
+  }
+
+  .card.critical::before,
+  .card.warning::before,
+  .card.info::before,
+  .card.success::before,
+  .card.neutral::before { background: var(--wire); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-tag {
+    display: inline-flex;
+    padding: 5px 12px;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid var(--wire);
+    color: var(--text);
+    background: transparent;
+  }
+  .tag-critical, .tag-warning, .tag-info, .tag-success, .tag-neutral {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .card-date {
+    font-size: 13px;
+    color: var(--text);
+    flex-shrink: 0;
+    font-family: monospace;
+    font-weight: 500;
+  }
+
+  .card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    color: var(--accent);
+  }
+  .card p {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  .card-footer {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .card-keyword {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 14px;
+    font-size: 14px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(0,170,255,0.3);
+    padding-bottom: 1px;
+  }
+  .card-link:hover { color: #fff; border-color: var(--accent); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card.stat-summary {
+    text-align: left;
+    padding: 16px 18px;
+    position: relative;
+  }
+  .stat-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    border: 1px solid var(--wire);
+    color: var(--text);
+    background: transparent;
+  }
+  .stat-badge.badge-red,
+  .stat-badge.badge-purple,
+  .stat-badge.badge-green {
+    background: transparent;
+    color: var(--text);
+  }
+  .stat-summary-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .stat-num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Section hidden by default */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Source links section */
+  .sources {
+    margin-top: 40px;
+    padding: 20px;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+  }
+  .sources h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-dim);
+  }
+  .sources a {
+    display: block;
+    font-size: 13px;
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .sources a:hover { color: var(--white); }
+  .sources a:last-child { border-bottom: none; }
+
+  /* Ticker */
+  .ticker-wrap {
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+    background: transparent;
+    border-top: 1px solid var(--wire);
+    border-bottom: 1px solid var(--wire);
+    padding: 10px 0;
+    margin: 10px 0 0;
+  }
+  .ticker {
+    display: flex;
+    gap: 60px;
+    animation: scroll 35s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+  .ticker span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+  }
+  .ticker span b { color: var(--text); font-weight: 600; }
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header { padding: 28px 16px 16px; }
+    h1 { font-size: 24px; }
+    .subtitle { font-size: 13px; }
+    .logo-icon { width: 42px; height: 42px; font-size: 20px; }
+    .logo-row { gap: 10px; }
+
+    main { padding: 16px 14px 40px; }
+
+    .tab-bar { gap: 3px; flex-wrap: wrap; justify-content: center; }
+    .tab { padding: 8px 12px; font-size: 13px; }
+    .tab.tab-highlight { padding: 8px 14px; }
+
+    .today-news { padding: 0 14px; }
+    .today-card { padding: 16px 18px; }
+    .today-card h4 { font-size: 15px; }
+    .today-card p { font-size: 13px; }
+
+    .stats-bar { grid-template-columns: 1fr; gap: 10px; }
+    .stat-card.stat-summary { padding: 14px 16px; }
+    .stat-badge { font-size: 11px; }
+    .stat-summary-text { font-size: 13px; }
+
+    .card { padding: 18px 16px; }
+    .card h3 { font-size: 17px; }
+    .card p { font-size: 14px; line-height: 1.7; }
+    .card-tag { font-size: 12px; padding: 4px 8px; }
+    .card-date { font-size: 12px; }
+    .card-keyword { font-size: 12px; padding: 3px 8px; }
+    .card-footer { gap: 6px; }
+
+    .detail-item { gap: 8px; padding: 8px 0; flex-wrap: wrap; }
+    .detail-date { font-size: 11px; min-width: 50px; }
+    .detail-title { font-size: 13px; }
+    .detail-toggle { font-size: 12px; padding: 6px 14px; }
+
+    .ticker span { font-size: 12px; }
+
+    .sources { padding: 16px; }
+    .sources a { font-size: 12px; padding: 8px 0; }
+
+    .fetch-btn { font-size: 12px; padding: 8px 18px; }
+  }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 20px; }
+    .tab { padding: 7px 10px; font-size: 12px; }
+    .card h3 { font-size: 16px; }
+    .card p { font-size: 13px; }
+    .today-card h4 { font-size: 14px; }
+    .detail-item { flex-direction: column; gap: 2px; }
+    .detail-date { min-width: auto; }
+  }
+
+  /* Today's News Rolling */
+  .today-news {
+    position: relative;
+    z-index: 10;
+    max-width: 960px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+    overflow: hidden;
+  }
+  .today-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .today-slider {
+    display: flex;
+    transition: transform 0.5s ease;
+    width: 300%;
+  }
+  .today-card {
+    flex: 0 0 calc(100% / 3);
+    padding: 20px 24px;
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    box-sizing: border-box;
+    margin-right: 0;
+  }
+  .today-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+  .today-card h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .today-card p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+  .today-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .today-link:hover { color: #fff; }
+  .today-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--wire);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+
+  /* Fetch button */
+  .fetch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    color: var(--white);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 0.3px;
+  }
+  .fetch-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,170,255,0.05);
+  }
+  .fetch-btn:active {
+    transform: scale(0.97);
+  }
+  .fetch-btn.loading .fetch-icon {
+    animation: spin 0.8s linear infinite;
+  }
+  .fetch-btn.loading {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .fetch-icon {
+    font-size: 16px;
+    display: inline-block;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .fetch-result {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .fetch-result.show { opacity: 1; }
+
+  /* Detail toggle */
+  .detail-toggle {
+    display: block;
+    margin-top: 14px;
+    padding: 7px 16px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .detail-toggle:hover {
+    color: var(--white);
+    border-color: var(--white);
+  }
+  .detail-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    margin-top: 0;
+  }
+  .detail-panel.open {
+    max-height: 500px;
+    margin-top: 12px;
+  }
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 14px;
+  }
+  .detail-item:last-child { border-bottom: none; }
+  .detail-date {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 60px;
+  }
+  .detail-title {
+    flex: 1;
+    color: var(--white);
+    line-height: 1.5;
+  }
+  .detail-item a {
+    flex-shrink: 0;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color .2s;
+  }
+  .detail-item a:hover { color: #fff; }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Ticker -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span><b>속보</b> 네이버 지분 매각 압박 지속 — 한국 개발 인력 구조적 배제</span>
+    <span><b>광고</b> LINE 광고 × Yahoo 광고 통합 → 'LINEヤフー広告' 2026년 봄 출시</span>
+    <span><b>인프라</b> OpenStack 164개 클러스터 → 'Flava' 단일 클라우드 전환 중</span>
+    <span><b>AI</b> ChatGPT Enterprise 전사 도입 · Google Gemini 단계적 도입 예정</span>
+    <span><b>서비스</b> LINE 캘린더 · LINE 레스토랑플러스 · LYP프리미엄 with Netflix</span>
+    <span><b>IPO</b> PayPay 미국 IPO 완료 (2026.03)</span>
+    <span><b>속보</b> 네이버 지분 매각 압박 지속 — 한국 개발 인력 구조적 배제</span>
+    <span><b>광고</b> LINE 광고 × Yahoo 광고 통합 → 'LINEヤフー広告' 2026년 봄 출시</span>
+    <span><b>인프라</b> OpenStack 164개 클러스터 → 'Flava' 단일 클라우드 전환 중</span>
+    <span><b>AI</b> ChatGPT Enterprise 전사 도입 · Google Gemini 단계적 도입 예정</span>
+    <span><b>서비스</b> LINE 캘린더 · LINE 레스토랑플러스 · LYP프리미엄 with Netflix</span>
+    <span><b>IPO</b> PayPay 미국 IPO 완료 (2026.03)</span>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo-row">
+    <div class="logo-icon">LY</div>
+    <div>
+      <h1><span>라인야후</span> 이슈 트래커</h1>
+      <p class="subtitle">LINE Yahoo (LY Corporation) — 실시간 동향 대시보드</p>
+    </div>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;gap:6px;">
+    <div class="live-dot"></div>
+    <span>LIVE · 2026년 4월 9일 기준</span>
+  </div>
+  <button class="fetch-btn" id="fetchBtn" onclick="fetchLatestNews()">
+    <span class="fetch-icon">↻</span> 최신 기사 가져오기
+  </button>
+</header>
+
+<!-- Today's News Rolling -->
+<div class="today-news">
+  <div class="today-label">TODAY · 2026.04.10</div>
+  <div class="today-slider" id="todaySlider">
+    <div class="today-card">
+      <span class="today-tag">내부 유출</span>
+      <h4>LINEヤフー 내부 회의자료 SNS 유출 — 미발표 제품 정보 포함</h4>
+      <p>라인야후의 사명이 확인되는 내부 회의자료와 클라이언트 메시지 화면이 SNS에서 확산되며 정보 관리 체계에 대한 논란이 확대되고 있습니다.</p>
+      <a class="today-link" href="https://tittiby.jp/2026/04/07/202604071159/" target="_blank">기사 원문 →</a>
+    </div>
+    <div class="today-card">
+      <span class="today-tag">오피스</span>
+      <h4>아카사카 신사옥 개설 — 출근 원칙 주 3회로 전환</h4>
+      <p>라인야후가 아카사카 트러스트타워에 신규 오피스를 4월 1일 개설하고, 전사 출근 정책을 기존 재택 중심에서 주 3회 출근으로 변경했습니다.</p>
+      <a class="today-link" href="https://www.itmedia.co.jp/news/articles/2604/01/news075.html" target="_blank">기사 원문 →</a>
+    </div>
+    <div class="today-card">
+      <span class="today-tag">카카오게임즈</span>
+      <h4>카카오게임즈, 라인야후 자회사 LAAA 인수로 최대주주 교체</h4>
+      <p>카카오게임즈가 LY 산하 LAAA 인베스트먼트를 새 최대주주로 맞이하며 약 8000억원을 확보, 재도약에 시동을 걸었습니다.</p>
+      <a class="today-link" href="https://www.kfenews.co.kr/news/articleView.html?idxno=656454" target="_blank">기사 원문 →</a>
+    </div>
+  </div>
+  <div class="today-dots" id="todayDots">
+    <span class="dot active"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
+</div>
+
+<main>
+
+  <!-- Tabs -->
+  <div class="tab-bar" style="padding:10px 0 16px;margin:0;overflow:visible;">
+    <button class="tab tab-highlight active" data-tab="design">디자인·UX</button>
+    <button class="tab" data-tab="all">전체</button>
+    <button class="tab" data-tab="governance">지배구조</button>
+    <button class="tab" data-tab="tech">기술·AI</button>
+    <button class="tab" data-tab="business">사업·서비스</button>
+    <button class="tab" data-tab="archive2025">2025년</button>
+  </div>
+
+  <div class="timeline">
+
+    <!-- Card 1: 2026.04 -->
+    <div class="card info reveal" data-cat="tech">
+      <div class="card-header">
+        <span class="card-tag tag-info">🔧 인프라</span>
+        <span class="card-date">2026.04</span>
+      </div>
+      <h3>OpenStack 164개 클러스터 → 'Flava' 단일 클라우드 전환</h3>
+      <p>LINE의 내부 클라우드 'Verda'(VM 13만 개, 호스트 1.1만 대)와 Yahoo Japan의 'YNW'(서버 2.7만 대, OpenStack 160개 이상 클러스터)를 통합한 차세대 클라우드 'Flava'로 전환 중입니다. 보안 사고 이후 일본 정부가 요구한 기술 스택 개선의 일환으로, 네이버 클라우드 의존도를 제로로 만드는 것이 핵심 목표입니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">OpenStack</span>
+        <span class="card-keyword">Flava</span>
+        <span class="card-keyword">클라우드</span>
+        <span class="card-keyword">인프라</span>
+      </div>
+      <a class="card-link" href="https://www.theregister.com/2026/04/07/ly_corp_openstack_consolidation" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Card 2: 2026.04.01 -->
+    <div class="card success reveal" data-cat="business">
+      <div class="card-header">
+        <span class="card-tag tag-success">📢 광고 통합</span>
+        <span class="card-date">2026.04.01</span>
+      </div>
+      <h3>LINE 광고 × Yahoo 광고 → 'LINEヤフー広告' 통합 출시</h3>
+      <p>2026년 4월 1일부로 LINE Ads와 Yahoo! JAPAN Display Ads가 'LINE Yahoo Ads Display Ads'로 통합되었습니다. 기존 LINE Ads의 광고 송출은 2026년 10월경 중단 예정이며, 새로운 크로스 서비스 측정 태그로 LINE·Yahoo 전체 서비스의 통합 추적이 가능해집니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">광고</span>
+        <span class="card-keyword">디스플레이</span>
+        <span class="card-keyword">통합</span>
+      </div>
+      <a class="card-link" href="https://www.digitalmarketingforasia.com/line-yahoo-ads-2026-platform-integration/" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Card 3: 2026.03 -->
+    <div class="card warning reveal" data-cat="governance">
+      <div class="card-header">
+        <span class="card-tag tag-warning">⚠️ 경영 변동</span>
+        <span class="card-date">2026.03</span>
+      </div>
+      <h3>경영진 대폭 개편 — '투 톱 체제' 전환</h3>
+      <p>카와베 켄타로 회장이 퇴임하고, 야후 출신 CFO가 새 사내이사로 선임되었습니다. 또한 다마쓰카 겐이치 롯데홀딩스 대표를 사외이사로 지명하며 새로운 투 톱 체제가 구축됩니다. 소프트뱅크 중심의 일본 측 경영 주도권이 더욱 강화되는 양상입니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">경영진</span>
+        <span class="card-keyword">투 톱</span>
+        <span class="card-keyword">소프트뱅크</span>
+      </div>
+      <a class="card-link" href="https://www.theguru.co.kr/news/article.html?no=100289" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Card 4: 2026.03 -->
+    <div class="card success reveal" data-cat="business">
+      <div class="card-header">
+        <span class="card-tag tag-success">💰 IPO</span>
+        <span class="card-date">2026.03</span>
+      </div>
+      <h3>PayPay 미국 IPO 완료</h3>
+      <p>라인야후 산하 결제 서비스 PayPay가 미국 시장에서 IPO를 완료했습니다. 일본 최대 모바일 결제 서비스의 글로벌 시장 진출이 본격화되며, LY 그룹 전체의 기업 가치 재평가 기대감이 높아지고 있습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">PayPay</span>
+        <span class="card-keyword">IPO</span>
+        <span class="card-keyword">결제</span>
+      </div>
+    </div>
+
+    <!-- Card 5: 2026.02 ~ 06 -->
+    <div class="card neutral reveal" data-cat="business">
+      <div class="card-header">
+        <span class="card-tag tag-neutral">🚀 신규 서비스</span>
+        <span class="card-date">2026.02 ~ 06</span>
+      </div>
+      <h3>신규 서비스 연이어 출시 — 캘린더, 레스토랑+, 뷰티+, Netflix 제휴</h3>
+      <p>LINE 캘린더(3월), LYP프리미엄 with Netflix(2월), LINE 레스토랑플러스·LINE 뷰티플러스(6월 예정) 등 새로운 서비스를 잇달아 선보이고 있습니다. 생활 밀착형 슈퍼앱 전략을 본격적으로 가동하며, 일본 내 생태계 지배력을 확대하는 모습입니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">LINE 캘린더</span>
+        <span class="card-keyword">Netflix</span>
+        <span class="card-keyword">슈퍼앱</span>
+      </div>
+      <a class="card-link" href="https://www.lycorp.co.jp/ja/news/release/020147/" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Card 6: 2026년 -->
+    <div class="card info reveal" data-cat="tech">
+      <div class="card-header">
+        <span class="card-tag tag-info">🤖 AI</span>
+        <span class="card-date">2026년</span>
+      </div>
+      <h3>일본 최대 AI 생태계 구축 — ChatGPT·Gemini 전사 도입</h3>
+      <p>라인야후는 OpenAI의 'ChatGPT Enterprise'를 전사 도입하고, 2026년 중 Google의 'Workspace'와 'Gemini'를 단계적으로 도입할 예정입니다. 또한 차세대 AI 에이전트 구상을 발표하며, 통합 시너지를 기반으로 일본 최대 AI 생태계 구축에 박차를 가하고 있습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">AI</span>
+        <span class="card-keyword">ChatGPT</span>
+        <span class="card-keyword">Gemini</span>
+        <span class="card-keyword">AI 에이전트</span>
+      </div>
+      <a class="card-link" href="https://www.bloter.net/news/articleView.html?idxno=639419" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- 2025 Archive: 긴급 요약 -->
+    <div class="card critical reveal" data-cat="archive2025">
+      <div class="card-header">
+        <span class="card-tag tag-critical">긴급 — 2025년 요약</span>
+        <span class="card-date">2025.04 ~</span>
+      </div>
+      <h3>네이버 지분 매각 압박 · 한국 인력 배제 · 경영진 개편</h3>
+      <p>일본 총무성 행정지도(2025.04) → 네이버 클라우드 의존도 제로화 선언(2025.06) → 개인정보 유출 사태 정리(2025.07) → 경영진 투 톱 체제 전환(2026.03) → 네이버 시스템 완전 분리(2026.03). 한국 측 개입 여지가 사실상 소멸되는 과정을 거쳤습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">네이버</span>
+        <span class="card-keyword">행정지도</span>
+        <span class="card-keyword">지분 매각</span>
+        <span class="card-keyword">소프트뱅크</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">2025.04</span>
+          <span class="detail-title">일본 총무성, 네이버 지분 축소 행정지도 발표</span>
+          <a href="https://news.nate.com/view/20250402n14739" target="_blank">→</a>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">2025.06</span>
+          <span class="detail-title">라인야후, 네이버 클라우드 의존도 제로화 선언</span>
+          <a href="https://www.kedglobal.com/business-politics/newsView/ked202406190005" target="_blank">→</a>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">2025.07</span>
+          <span class="detail-title">개인정보 유출 후속 — 라인야후 사태 전말 정리</span>
+          <a href="https://economist.co.kr/article/view/ecn202407240051" target="_blank">→</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2025 Archive: 진행중 요약 -->
+    <div class="card warning reveal" data-cat="archive2025">
+      <div class="card-header">
+        <span class="card-tag tag-warning">진행중 — 2025년 요약</span>
+        <span class="card-date">2025.12 ~</span>
+      </div>
+      <h3>네이버 클라우드 분리 · 인프라 전환 · 자체 운영 체제 확립</h3>
+      <p>네이버 클라우드 인증 기반 완전 종료(2025.12) → 네이버 그룹사 위탁 운영 종료(2026.03) → OpenStack 164개 클러스터 Flava 전환 착수(2026.04). 기술·인프라 영역에서 일본 자체 운영 체제가 확립되었습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">시스템 분리</span>
+        <span class="card-keyword">Flava</span>
+        <span class="card-keyword">인프라</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">2025.12</span>
+          <span class="detail-title">네이버 클라우드 인증 기반·시스템 연계 완전 종료</span>
+          <a href="https://www.kedglobal.com/business-politics/newsView/ked202406190005" target="_blank">→</a>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">2026.03</span>
+          <span class="detail-title">네이버 그룹사 위탁 운영 순차 종료 — 분리 완료</span>
+          <a href="https://www.kedglobal.com/business-politics/newsView/ked202406190005" target="_blank">→</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 7: 2025.12 ~ 2026.03 -->
+    <div class="card warning reveal" data-cat="archive2025">
+      <div class="card-header">
+        <span class="card-tag tag-warning">🔒 보안·분리</span>
+        <span class="card-date">2025.12 ~ 2026.03</span>
+      </div>
+      <h3>네이버 시스템 완전 분리 완료</h3>
+      <p>네이버 및 네이버 클라우드와의 인증 기반·시스템 연계를 2025년 12월까지, 기타 네이버 그룹사 위탁 운영은 2026년 3월까지 순차적으로 종료했습니다. 기술적·조직적으로 한국이 라인 운영에 개입할 여지가 사실상 사라졌다는 평가를 받고 있습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">시스템 분리</span>
+        <span class="card-keyword">네이버 클라우드</span>
+        <span class="card-keyword">보안</span>
+      </div>
+      <a class="card-link" href="https://www.kedglobal.com/business-politics/newsView/ked202406190005" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Card 8: 2025.04 ~ 현재 -->
+    <div class="card critical reveal" data-cat="archive2025">
+      <div class="card-header">
+        <span class="card-tag tag-critical">🔴 핵심 이슈</span>
+        <span class="card-date">2025.04 ~ 현재</span>
+      </div>
+      <h3>네이버 지분 매각 압박 — 한국 운영·개발 완전 배제 수순</h3>
+      <p>일본 정부의 행정지도에 따라 라인야후는 네이버와의 자본·기술 관계를 전면 청산하는 방향으로 나아가고 있습니다. 2023년 11월 개인정보 유출 사건 이후, 일본 총무성은 네이버의 지분 축소를 사실상 강제하였고, 라인 플랫폼을 구축해온 한국 인력을 구조적으로 배제하겠다는 방침이 보다 분명해졌습니다. "한국은 운영도 개발도 못 한다"는 보도까지 나오며 논란이 확대되고 있습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">네이버</span>
+        <span class="card-keyword">지분 매각</span>
+        <span class="card-keyword">행정지도</span>
+        <span class="card-keyword">개인정보 유출</span>
+      </div>
+      <a class="card-link" href="https://news.nate.com/view/20250402n14739" target="_blank">관련 기사 →</a>
+    </div>
+
+    <!-- Design Cards -->
+    <div class="card neutral reveal" data-cat="design">
+      <div class="card-header">
+        <span class="card-tag tag-neutral">디자인 시스템</span>
+        <span class="card-date">2026.04</span>
+      </div>
+      <h3>LINE Design System 3.0 — 통합 디자인 토큰 체계 도입</h3>
+      <p>LINE과 Yahoo Japan의 디자인 시스템을 통합한 LY Design System 3.0이 내부 공개되었습니다. 기존 LINE의 'LDS'와 Yahoo의 'Riff'를 하나로 합치고, 디자인 토큰 기반의 크로스 플랫폼 컴포넌트 라이브러리를 구축 중입니다. 색상·간격·타이포·그림자 등 모든 시각 속성을 토큰으로 관리하며, iOS/Android/Web 세 플랫폼에서 동일한 UI를 보장합니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">디자인 시스템</span>
+        <span class="card-keyword">디자인 토큰</span>
+        <span class="card-keyword">Figma</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">통합</span>
+          <span class="detail-title">LINE 'LDS' + Yahoo 'Riff' → 단일 디자인 시스템 'LY DS 3.0'으로 통합</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">토큰</span>
+          <span class="detail-title">Primitive → Semantic → Component 3계층 토큰 구조 채택, 다크/라이트 모드 자동 대응</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">컴포넌트</span>
+          <span class="detail-title">Button·Input·Card·Modal 등 120+ 컴포넌트 표준화, Figma ↔ 코드 자동 동기화</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">협업</span>
+          <span class="detail-title">Figma 전면 전환, Sketch/Adobe XD 지원 중단. 디자인-개발 핸드오프 자동화</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">적용</span>
+          <span class="detail-title">LINE 메신저·Yahoo 쇼핑·PayPay 등 주요 서비스에 순차 적용 중 (2026 Q2 목표)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card neutral reveal" data-cat="design">
+      <div class="card-header">
+        <span class="card-tag tag-neutral">UX 리뉴얼</span>
+        <span class="card-date">2026.03</span>
+      </div>
+      <h3>LINE 앱 UX 대규모 리뉴얼 — 탭 구조 개편 및 슈퍼앱 UI 전환</h3>
+      <p>LINE 앱의 하단 탭 구조가 전면 개편되었습니다. 기존 5탭(홈·채팅·타임라인·뉴스·월렛)에서 홈·채팅·서비스·월렛 4탭 체제로 변경되고, 새로운 '서비스' 탭에 Yahoo 연동 콘텐츠(뉴스·쇼핑·예약·검색)가 통합 배치됩니다. 타임라인은 홈 내 피드로 흡수되며, 슈퍼앱으로서 '하나의 앱에서 모든 생활 서비스'를 제공하는 방향으로 IA(Information Architecture)가 재설계되었습니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">UX</span>
+        <span class="card-keyword">탭 구조</span>
+        <span class="card-keyword">슈퍼앱</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">탭 개편</span>
+          <span class="detail-title">5탭 → 4탭: 홈·채팅·서비스·월렛. 타임라인 탭 폐지, 홈 피드로 흡수</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">서비스탭</span>
+          <span class="detail-title">Yahoo 뉴스·쇼핑·예약·검색을 LINE 내 서비스 탭에 네이티브로 통합 배치</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">네비게이션</span>
+          <span class="detail-title">바텀시트 기반 서브 네비게이션 도입, 깊은 depth 없이 평면적 탐색 가능</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">개인화</span>
+          <span class="detail-title">사용 패턴 기반 서비스 탭 내 위젯 자동 배치, 사용자별 맞춤 레이아웃</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">일정</span>
+          <span class="detail-title">일본 시장 2026.03 적용 완료, 태국·대만 등 해외는 Q3 순차 롤아웃 예정</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card neutral reveal" data-cat="design">
+      <div class="card-header">
+        <span class="card-tag tag-neutral">브랜딩</span>
+        <span class="card-date">2026.02</span>
+      </div>
+      <h3>LY 통합 브랜드 가이드라인 v2 공개 — 서비스별 컬러 체계 정비</h3>
+      <p>라인야후 통합 이후 서비스별로 혼재되던 브랜드 컬러와 타이포그래피가 정리되었습니다. LINE Green(#06C755)을 메인 브랜드 컬러로 유지하되, Yahoo 계열 서비스에는 뉴트럴 톤(Gray 900~100)을 적용하는 듀얼 브랜드 전략이 확정되었습니다. 새로운 'LY Sans' 전용 서체도 내부 테스트 중이며, 한·중·일 CJK 글리프를 통합 지원합니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">브랜딩</span>
+        <span class="card-keyword">컬러 체계</span>
+        <span class="card-keyword">타이포그래피</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">컬러</span>
+          <span class="detail-title">LINE 서비스: Green(#06C755) 메인 유지. Yahoo 서비스: 뉴트럴 그레이 톤 적용</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">서체</span>
+          <span class="detail-title">'LY Sans' 전용 서체 개발 중 — 한·일·영 통합, CJK 글리프 10만자+ 지원</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">아이콘</span>
+          <span class="detail-title">LINE·Yahoo 아이콘 세트 통합, 2px 스트로크 기반 700+ 아이콘 표준화</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">모션</span>
+          <span class="detail-title">통합 모션 가이드라인: ease-out 200ms 기본, 마이크로인터랙션 패턴 40종 정의</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card neutral reveal" data-cat="design">
+      <div class="card-header">
+        <span class="card-tag tag-neutral">AI × 디자인</span>
+        <span class="card-date">2026.01</span>
+      </div>
+      <h3>AI 기반 디자인 자동화 도구 내부 도입 — 배너·썸네일 자동 생성</h3>
+      <p>광고 플랫폼 통합과 함께, AI 기반 크리에이티브 자동 생성 도구가 내부 도입되었습니다. 디스플레이 광고 배너, 서비스 썸네일, 캠페인 비주얼을 자동으로 생성하며, 디자이너는 프롬프트와 브랜드 가이드라인 설정에 집중하는 워크플로우로 전환하고 있습니다. 기존 수작업 대비 제작 시간이 약 70% 단축되었다는 내부 평가입니다.</p>
+      <div class="card-footer">
+        <span class="card-keyword">AI</span>
+        <span class="card-keyword">자동화</span>
+        <span class="card-keyword">크리에이티브</span>
+      </div>
+      <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+      <div class="detail-panel">
+        <div class="detail-item">
+          <span class="detail-date">배너</span>
+          <span class="detail-title">디스플레이 광고 배너 6사이즈 동시 생성, 브랜드 가이드 자동 준수</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">썸네일</span>
+          <span class="detail-title">뉴스·쇼핑·캠페인 썸네일 AI 자동 생성, A/B 테스트용 다변량 출력</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">워크플로우</span>
+          <span class="detail-title">디자이너 역할 변화: 직접 제작 → 프롬프트 설계 + 품질 검수 + 가이드라인 관리</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-date">효율</span>
+          <span class="detail-title">크리에이티브 제작 시간 70% 단축, 월 5만건+ 배너 자동 생성 운영 중</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 확장 카드 -->
+  <div class="stat-card stat-summary reveal" style="margin-top:30px;">
+    <span class="stat-badge badge-green">확장 — 2026년</span>
+    <div class="stat-summary-text">
+      ChatGPT·Gemini 전사 도입, AI 생태계 구축.<br>
+      LINE×Yahoo 광고 통합 플랫폼 출시(2026.04).<br>
+      PayPay IPO · 신규 서비스 연이어 런칭.
+    </div>
+    <button class="detail-toggle" onclick="toggleDetail(this)">상세보기 ↓</button>
+    <div class="detail-panel">
+      <div class="detail-item">
+        <span class="detail-date">2026.02</span>
+        <span class="detail-title">LYP프리미엄 with Netflix 제휴 서비스 출시</span>
+        <a href="https://www.lycorp.co.jp/ja/news/release/020147/" target="_blank">→</a>
+      </div>
+      <div class="detail-item">
+        <span class="detail-date">2026.03</span>
+        <span class="detail-title">PayPay 미국 IPO 완료 — 글로벌 시장 진출</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-date">2026.03</span>
+        <span class="detail-title">LINE 캘린더 서비스 정식 출시</span>
+        <a href="https://www.lycorp.co.jp/ja/news/release/020147/" target="_blank">→</a>
+      </div>
+      <div class="detail-item">
+        <span class="detail-date">2026.04</span>
+        <span class="detail-title">LINE×Yahoo 광고 통합 'LINEヤフー広告' 출시</span>
+        <a href="https://www.digitalmarketingforasia.com/line-yahoo-ads-2026-platform-integration/" target="_blank">→</a>
+      </div>
+      <div class="detail-item">
+        <span class="detail-date">2026년</span>
+        <span class="detail-title">ChatGPT Enterprise 전사 도입 · Gemini 단계적 도입</span>
+        <a href="https://www.bloter.net/news/articleView.html?idxno=639419" target="_blank">→</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sources -->
+  <div class="sources reveal">
+    <h4>📎 참고 소스</h4>
+    <a href="https://news.nate.com/view/20250402n14739" target="_blank">네이트 뉴스 — '라인', 日 품으로… "韓은 운영도 개발도 못 한다"</a>
+    <a href="https://www.theguru.co.kr/news/article.html?no=100289" target="_blank">더구루 — 日 라인야후 새로운 '투 톱 체제' 등장</a>
+    <a href="https://www.theregister.com/2026/04/07/ly_corp_openstack_consolidation" target="_blank">The Register — Yahoo Japan's consolidating 164 OpenStack clusters</a>
+    <a href="https://www.bloter.net/news/articleView.html?idxno=639419" target="_blank">블로터 — 라인야후, AI 생태계 구축·수익화 시동</a>
+    <a href="https://www.digitalmarketingforasia.com/line-yahoo-ads-2026-platform-integration/" target="_blank">Digital Marketing for Asia — LINE Yahoo Ads 2026 Platform Integration</a>
+    <a href="https://www.lycorp.co.jp/ja/news/release/020147/" target="_blank">LY Corporation — LINE 캘린더 서비스 발표</a>
+    <a href="https://webtan.impress.co.jp/e/2025/12/12/51781" target="_blank">Web担当者Forum — 2026年春 LINEヤフー広告 誕生</a>
+    <a href="https://www.kedglobal.com/business-politics/newsView/ked202406190005" target="_blank">KED Global — Line Yahoo to sever tech ties with Naver</a>
+    <a href="https://economist.co.kr/article/view/ecn202407240051" target="_blank">이코노미스트 — 개인정보 유출로 시작된 라인야후 사태</a>
+  </div>
+
+</main>
+
+<script>
+  // Tab switching
+  const tabs = document.querySelectorAll('.tab');
+  const cards = document.querySelectorAll('.card');
+
+  function filterByTab(cat) {
+    cards.forEach(c => {
+      if (cat === 'all' || c.dataset.cat?.includes(cat)) {
+        c.style.display = '';
+      } else {
+        c.style.display = 'none';
+      }
+    });
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      filterByTab(tab.dataset.tab);
+    });
+  });
+
+  // 초기 로드: 디자인 탭 활성화
+  filterByTab('design');
+
+  // Detail toggle
+  function toggleDetail(btn) {
+    const panel = btn.nextElementSibling;
+    const isOpen = panel.classList.toggle('open');
+    btn.textContent = isOpen ? '접기 ↑' : '상세보기 ↓';
+  }
+
+  // Fetch latest news
+  function fetchLatestNews() {
+    const btn = document.getElementById('fetchBtn');
+    btn.classList.add('loading');
+    btn.querySelector('.fetch-icon').textContent = '↻';
+
+    // 로딩 시뮬레이션 (실제 API 연동 시 이 부분을 fetch()로 교체)
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      const now = new Date();
+      const dateStr = now.getFullYear() + '.' +
+        String(now.getMonth()+1).padStart(2,'0') + '.' +
+        String(now.getDate()).padStart(2,'0') + ' ' +
+        String(now.getHours()).padStart(2,'0') + ':' +
+        String(now.getMinutes()).padStart(2,'0');
+
+      // 결과 메시지 표시
+      let result = btn.parentElement.querySelector('.fetch-result');
+      if (!result) {
+        result = document.createElement('div');
+        result.className = 'fetch-result';
+        btn.parentElement.appendChild(result);
+      }
+      result.textContent = '마지막 확인: ' + dateStr + ' — 현재 수동 업데이트 모드';
+      result.classList.add('show');
+
+      // API 연동 예시 (주석 해제 후 사용):
+      // fetch('https://your-api.com/news?q=라인야후')
+      //   .then(r => r.json())
+      //   .then(data => { /* 카드 생성 로직 */ })
+      //   .catch(err => { result.textContent = '기사 가져오기 실패: ' + err.message; });
+    }, 1500);
+  }
+
+  // Today's news rolling
+  const slider = document.getElementById('todaySlider');
+  const dots = document.querySelectorAll('#todayDots .dot');
+  let currentSlide = 0;
+  const totalSlides = 3;
+
+  function goToSlide(n) {
+    currentSlide = n;
+    slider.style.transform = `translateX(-${n * (100 / totalSlides)}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === n));
+  }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => goToSlide(i));
+  });
+
+  setInterval(() => {
+    goToSlide((currentSlide + 1) % totalSlides);
+  }, 4000);
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
