@@ -1391,7 +1391,11 @@
       renderNews(articles);
     } catch(err) {
       const fetchStatus = document.getElementById('fetchStatus');
-      fetchStatus.textContent = '가져오기 실패: ' + err.message + ' — 기본 기사를 표시합니다';
+      const reason = err.message.includes('Failed to fetch') ? '네트워크 연결 실패'
+        : err.message.includes('기사를 찾을 수 없') ? '검색 결과 없음'
+        : err.message.includes('XML') || err.message.includes('parse') ? 'RSS 데이터 파싱 오류'
+        : err.message;
+      fetchStatus.innerHTML = `<span style="color:#ff6b6b;">⚠ 로드 실패 — ${reason}</span> <span style="color:var(--text-dim);font-size:10px;">(기본 기사 표시 중)</span>`;
       fetchStatus.classList.add('show');
     } finally {
       btn.classList.remove('loading');
