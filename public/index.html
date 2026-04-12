@@ -596,6 +596,140 @@
   }
   .fetch-result.show { opacity: 1; }
 
+  /* News search */
+  .news-search-form {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 480px;
+    justify-content: center;
+  }
+  .news-search {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 14px;
+    background: transparent;
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    color: var(--white);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.2px;
+    transition: all .2s;
+    outline: none;
+  }
+  .news-search::placeholder { color: var(--text-dim); }
+  .news-search:focus {
+    border-color: var(--accent);
+    background: rgba(0,170,255,0.04);
+  }
+  .search-btn {
+    padding: 0 18px;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    color: #000;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .search-btn:hover { background: #33bbff; border-color: #33bbff; }
+  .search-btn:active { transform: scale(0.97); }
+
+  /* Search results section */
+  .search-results {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    padding: 20px 24px;
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    background: rgba(0,170,255,0.04);
+  }
+  .search-results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--wire);
+  }
+  .search-results-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .search-results-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    flex: 1;
+  }
+  .search-results-close {
+    background: transparent;
+    border: 1px solid var(--wire);
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .search-results-close:hover { border-color: var(--accent); color: var(--accent); }
+  .search-results-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .search-result-item {
+    padding: 14px 16px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--wire);
+    border-radius: 2px;
+    transition: all .2s;
+  }
+  .search-result-item:hover {
+    border-color: var(--accent);
+    background: rgba(0,170,255,0.06);
+  }
+  .search-result-item .src {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .search-result-item h4 {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--white);
+    margin: 0 0 8px;
+  }
+  .search-result-item .meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .search-result-item a {
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .search-result-item a:hover { text-decoration: underline; }
+  .search-results-empty {
+    text-align: center;
+    padding: 30px 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
   /* Detail toggle */
   .detail-toggle {
     display: block;
@@ -701,6 +835,10 @@
   <button class="fetch-btn" id="fetchBtn" onclick="fetchLatestNews()">
     <span class="fetch-icon">↻</span> 최신 기사 가져오기
   </button>
+  <form class="news-search-form" onsubmit="event.preventDefault(); filterNews(document.getElementById('newsSearch').value);">
+    <input type="text" id="newsSearch" class="news-search" placeholder="🔍 가져온 기사 검색 (제목·출처)" oninput="filterNews(this.value)" />
+    <button type="submit" class="search-btn">검색</button>
+  </form>
   <div style="margin-top:12px;font-size:12px;color:var(--text-dim);display:flex;flex-direction:column;align-items:center;gap:4px;">
     <div style="display:flex;align-items:center;gap:6px;">
       <div class="live-dot"></div>
@@ -709,6 +847,16 @@
     <div id="fetchStatus" class="fetch-status"></div>
   </div>
 </header>
+
+<!-- Search Results (filtered) -->
+<section id="searchResults" class="search-results" hidden>
+  <div class="search-results-header">
+    <span class="search-results-label">검색 결과</span>
+    <span id="searchResultsCount" class="search-results-count"></span>
+    <button type="button" class="search-results-close" onclick="clearSearch()">✕ 닫기</button>
+  </div>
+  <div id="searchResultsList" class="search-results-list"></div>
+</section>
 
 <!-- Today's News Rolling -->
 <div class="today-news">
@@ -1340,10 +1488,65 @@
     return allArticles.slice(0, 10);
   }
 
+  let lastArticles = [];
+
+  function escapeHTML(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function clearSearch() {
+    document.getElementById('newsSearch').value = '';
+    document.getElementById('searchResults').hidden = true;
+  }
+
+  function filterNews(q) {
+    const query = (q || '').trim().toLowerCase();
+    const section = document.getElementById('searchResults');
+    const list = document.getElementById('searchResultsList');
+    const countEl = document.getElementById('searchResultsCount');
+
+    if (!query) {
+      section.hidden = true;
+      return;
+    }
+    if (!lastArticles.length) {
+      section.hidden = false;
+      countEl.textContent = '';
+      list.innerHTML = `<div class="search-results-empty">먼저 "최신 기사 가져오기"로 기사를 불러와 주세요.</div>`;
+      return;
+    }
+
+    const filtered = lastArticles.filter(a =>
+      (a.title || '').toLowerCase().includes(query) ||
+      (a.source || '').toLowerCase().includes(query));
+
+    section.hidden = false;
+    countEl.innerHTML = `"<b style="color:var(--accent)">${escapeHTML(q)}</b>" · 총 ${filtered.length}건`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="search-results-empty">일치하는 기사가 없습니다.</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(a => {
+      const d = a.pubDate ? new Date(a.pubDate) : null;
+      const timeStr = d ? `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '';
+      return `<div class="search-result-item">
+        <span class="src">${escapeHTML(a.source)}</span>
+        <h4>${escapeHTML(a.title)}</h4>
+        <div class="meta">${timeStr}</div>
+        <a href="${escapeHTML(a.link)}" target="_blank">기사 원문 →</a>
+      </div>`;
+    }).join('');
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderNews(articles) {
     const t = formatNow();
     const count = articles.length || 1;
     totalSlides = count;
+    lastArticles = articles;
 
     // Update LIVE date
     liveDate.textContent = `LIVE · ${t.year}년 ${t.month}월 ${t.day}일 ${t.full.split(' ')[1]} 기준`;
